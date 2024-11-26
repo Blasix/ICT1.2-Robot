@@ -9,14 +9,15 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Avans.StatisticalRobot" Version="1.0.1" />
     <PackageReference Include="System.Device.Gpio" Version="3.2.0" />
   </ItemGroup>
 
-  <ItemGroup>
+  <!-- <ItemGroup>
     
     <Reference Include="Avans.StatisticalRobot">
       <HintPath>./StatisticalRobot-Lib.dll</HintPath>
     </Reference>
-  </ItemGroup>
+  </ItemGroup> -->
 
 </Project>
