@@ -3,4 +3,4 @@ using Avans.StatisticalRobot;
 
 Console.WriteLine("Connected!");
 
-Drive.start();
+await Drive.StartAsync();

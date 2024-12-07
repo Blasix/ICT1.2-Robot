@@ -2,49 +2,86 @@ using Avans.StatisticalRobot;
 
 class Drive
 {
-    static public void start()
+    // Add this class to hold shared state
+    public class SharedState
+    {
+        public int DriveState { get; set; } = 0;
+    }
+
+    static public async Task StartAsync()
+    {
+        // Ultrasonic ultrasonic = new Ultrasonic(16);
+        var state = new SharedState();
+
+        using var cts = new CancellationTokenSource();
+
+        Console.CancelKeyPress += (s, e) =>
+        {
+            cts.Cancel();
+            e.Cancel = true;
+        };
+
+        try
+        {
+            var buttonTask = RunButtonMonitor(state, cts.Token);
+            // var distanceTask = RunDistanceMonitor(ultrasonic, state, cts.Token);
+            var driveTask = RunDriveState(state, cts.Token);
+
+            await Task.WhenAll(buttonTask,
+            // distanceTask, 
+            driveTask);
+        }
+        catch (OperationCanceledException)
+        {
+            Console.WriteLine("Drive cancelled");
+        }
+        finally
+        {
+            Robot.Motors(0, 0);
+        }
+    }
+
+    private static async Task RunButtonMonitor(SharedState state, CancellationToken ct)
     {
         Button button = new Button(6);
-        int driveState = 0;
-        bool lastButtonState = false;
-
-        while (true)
+        bool LastButtonState = false;
+        while (!ct.IsCancellationRequested)
         {
             bool currentButtonState = button.GetState() == "Pressed";
-
-            // Checken of de knop nu word ingedrukt (en de vorige keer niet), zodat er geen dubbelen triggers zijn
-            if (currentButtonState && !lastButtonState)
+            if (currentButtonState && LastButtonState)
             {
-                if (driveState < 3)
-                {
-                    driveState++;
-                }
+                if (state.DriveState < 3)
+                    state.DriveState++;
                 else
-                {
-                    driveState = 0;
-                }
-                switch (driveState)
-                {
-                    // case 0:
-                    //     Robot.Motors(0, 0);
-                    //     break;
-                    case 1:
-                        Robot.Motors(30, 30);
-                        break;
-                    case 2:
-                        Robot.Motors(60, 60);
-                        break;
-                    case 3:
-                        Robot.Motors(120, 120);
-                        break;
-                    default:
-                        Robot.Motors(0, 0);
-                        break;
-                }
+                    state.DriveState = 0;
             }
-            Robot.Wait(1);
-            lastButtonState = currentButtonState;  // Update de button state
-            Robot.Wait(1);
+            LastButtonState = currentButtonState;
+            await Task.Delay(2);
+        }
+    }
+
+    private static async Task RunDriveState(SharedState state, CancellationToken ct)
+    {
+        while (!ct.IsCancellationRequested)
+        {
+
+            switch (state.DriveState)
+            {
+                case 1:
+                    Robot.Motors(30, 30);
+                    break;
+                case 2:
+                    Robot.Motors(60, 60);
+                    break;
+                case 3:
+                    Robot.Motors(120, 120);
+                    break;
+                default:
+                    Robot.Motors(0, 0);
+                    break;
+
+            }
+            await Task.Delay(100);
         }
     }
 }
