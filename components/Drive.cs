@@ -2,16 +2,15 @@ using Avans.StatisticalRobot;
 
 class Drive
 {
-    // Add this class to hold shared state
-    public class SharedState
-    {
-        public int DriveState { get; set; } = 0;
-    }
+    // public class SharedState
+    // {
+    //     public int DriveState { get; set; } = 0;
+    // }
 
     static public async Task StartAsync()
     {
         // Ultrasonic ultrasonic = new Ultrasonic(16);
-        var state = new SharedState();
+        // var state = new SharedState();
 
         using var cts = new CancellationTokenSource();
 
@@ -23,11 +22,12 @@ class Drive
 
         try
         {
-            var buttonTask = RunButtonMonitor(state, cts.Token);
+            // var buttonTask = RunButtonMonitor(state, cts.Token);
             // var distanceTask = RunDistanceMonitor(ultrasonic, state, cts.Token);
-            var driveTask = RunDriveState(state, cts.Token);
+            var driveTask = RunDriveState(cts.Token);
 
-            await Task.WhenAll(buttonTask,
+            await Task.WhenAll(
+            // buttonTask,
             // distanceTask, 
             driveTask);
         }
@@ -41,46 +41,55 @@ class Drive
         }
     }
 
-    private static async Task RunButtonMonitor(SharedState state, CancellationToken ct)
+    // private static async Task RunButtonMonitor(SharedState state, CancellationToken ct)
+    // {
+    //     Button button = new Button(6);
+    //     bool LastButtonState = false;
+    //     while (!ct.IsCancellationRequested)
+    //     {
+    //         bool currentButtonState = button.GetState() == "Pressed";
+    //         if (currentButtonState && !LastButtonState)
+    //         {
+    //             if (state.DriveState < 3)
+    //                 state.DriveState++;
+    //             else
+    //                 state.DriveState = 0;
+    //         }
+    //         LastButtonState = currentButtonState;
+    //         await Task.Delay(20);
+    //     }
+    // }
+
+    private static async Task RunDriveState(CancellationToken ct)
     {
-        Button button = new Button(6);
-        bool LastButtonState = false;
+        WorkingType lastWorkingType = WorkingType.Stop;
         while (!ct.IsCancellationRequested)
         {
-            bool currentButtonState = button.GetState() == "Pressed";
-            if (currentButtonState && LastButtonState)
+            if (lastWorkingType != SharedWorkingType.workingType)
             {
-                if (state.DriveState < 3)
-                    state.DriveState++;
-                else
-                    state.DriveState = 0;
+                switch (SharedWorkingType.workingType)
+                {
+                    case WorkingType.Forward:
+                        Robot.Motors(120, 120);
+                        break;
+                    case WorkingType.Backward:
+                        Robot.Motors(-120, -120);
+                        break;
+                    case WorkingType.Left:
+                        Robot.Motors(-60, 60);
+                        break;
+                    case WorkingType.Right:
+                        Robot.Motors(60, -60);
+                        break;
+                    case WorkingType.Stop:
+                        Robot.Motors(0, 0);
+                        break;
+                    case WorkingType.Automatic:
+                        // Robot.Motors(1, 1);
+                        break;
+                }
             }
-            LastButtonState = currentButtonState;
-            await Task.Delay(2);
-        }
-    }
-
-    private static async Task RunDriveState(SharedState state, CancellationToken ct)
-    {
-        while (!ct.IsCancellationRequested)
-        {
-
-            switch (state.DriveState)
-            {
-                case 1:
-                    Robot.Motors(30, 30);
-                    break;
-                case 2:
-                    Robot.Motors(60, 60);
-                    break;
-                case 3:
-                    Robot.Motors(120, 120);
-                    break;
-                default:
-                    Robot.Motors(0, 0);
-                    break;
-
-            }
+            lastWorkingType = SharedWorkingType.workingType;
             await Task.Delay(100);
         }
     }
