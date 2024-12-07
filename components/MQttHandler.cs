@@ -29,6 +29,16 @@ class MQTTHandler
                 "stop" => WorkingType.Stop,
                 _ => WorkingType.Stop
             };
+
+            // // Stuur status terug
+            // string message = SharedWorkingType.workingType switch
+            // {
+            //     WorkingType.Stop => "Stopped|" + DateTime.Now,
+            //     WorkingType.Automatic => "Automatic|" + DateTime.Now,
+            //     _ => "Manual|" + DateTime.Now
+            // };
+
+            // mqttClient.PublishMessage(message, "status");
         };
     }
 }

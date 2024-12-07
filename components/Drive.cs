@@ -56,9 +56,27 @@ class Drive
     //                 state.DriveState = 0;
     //         }
     //         LastButtonState = currentButtonState;
-    //         await Task.Delay(20);
+    //         await Task.Delay(20, ct);
     //     }
     // }
+    private static CancellationTokenSource? automaticCts;
+    private static Task? automaticTask;
+    private static async Task? RunAutomaticControll(CancellationToken ct)
+    {
+        try
+        {
+            while (!ct.IsCancellationRequested)
+            {
+                Console.WriteLine("Automatic");
+                await Task.Delay(10, ct);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            Console.WriteLine("Automatic cancelled");
+        }
+
+    }
 
     private static async Task RunDriveState(CancellationToken ct)
     {
@@ -70,27 +88,51 @@ class Drive
                 switch (SharedWorkingType.workingType)
                 {
                     case WorkingType.Forward:
+                        await CancelAutomaticAsync();
                         Robot.Motors(120, 120);
                         break;
                     case WorkingType.Backward:
+                        await CancelAutomaticAsync();
                         Robot.Motors(-120, -120);
                         break;
                     case WorkingType.Left:
+                        await CancelAutomaticAsync();
                         Robot.Motors(-60, 60);
                         break;
                     case WorkingType.Right:
+                        await CancelAutomaticAsync();
                         Robot.Motors(60, -60);
                         break;
                     case WorkingType.Stop:
+                        await CancelAutomaticAsync();
                         Robot.Motors(0, 0);
                         break;
                     case WorkingType.Automatic:
-                        // Robot.Motors(1, 1);
+                        if (automaticTask == null)
+                        {
+                            automaticCts = new CancellationTokenSource();
+                            automaticTask = RunAutomaticControll(automaticCts.Token);
+                        }
                         break;
                 }
             }
             lastWorkingType = SharedWorkingType.workingType;
-            await Task.Delay(100);
+            await Task.Delay(100, ct);
+        }
+
+        automaticCts?.Cancel();
+        if (automaticTask != null) await automaticTask;
+        Robot.Motors(0, 0);
+    }
+    private static async Task CancelAutomaticAsync()
+    {
+        if (automaticTask != null)
+        {
+            automaticCts?.Cancel();
+            await automaticTask;
+            automaticCts?.Dispose();
+            automaticTask = null;
+            automaticCts = null;
         }
     }
 }
