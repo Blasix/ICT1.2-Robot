@@ -3,6 +3,5 @@ using Avans.StatisticalRobot;
 
 Console.WriteLine("Connected!");
 
-MQTTHandler mqttHandler = new MQTTHandler();
-mqttHandler.ReadMessage();
+MQTTHandler.Instance.ReadMessage();
 await Drive.StartAsync();

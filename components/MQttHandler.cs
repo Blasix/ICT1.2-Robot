@@ -6,10 +6,29 @@ class MQTTHandler
     private readonly string topic = "commands";
     private readonly SimpleMqttClient mqttClient;
 
-    public MQTTHandler()
+    private static MQTTHandler? instance;
+
+    private static readonly object lockObject = new object();
+
+    private MQTTHandler()
     {
         mqttClient = SimpleMqttClient.CreateSimpleMqttClientForHiveMQ(name);
         mqttClient.SubscribeToTopic(topic);
+    }
+
+    public static MQTTHandler Instance
+    {
+        get
+        {
+            if (instance == null)
+            {
+                lock (lockObject)
+                {
+                    instance ??= new MQTTHandler();
+                }
+            }
+            return instance;
+        }
     }
 
     public void ReadMessage()
@@ -29,16 +48,18 @@ class MQTTHandler
                 "stop" => WorkingType.Stop,
                 _ => WorkingType.Stop
             };
-
-            // // Stuur status terug
-            // string message = SharedWorkingType.workingType switch
-            // {
-            //     WorkingType.Stop => "Stopped|" + DateTime.Now,
-            //     WorkingType.Automatic => "Automatic|" + DateTime.Now,
-            //     _ => "Manual|" + DateTime.Now
-            // };
-
-            // mqttClient.PublishMessage(message, "status");
         };
+    }
+
+
+    public void PublishStatus()
+    {
+        string message = SharedWorkingType.workingType switch
+        {
+            WorkingType.Stop => "Stopped|" + DateTime.Now,
+            WorkingType.Automatic => "Automatic|" + DateTime.Now,
+            _ => "Manual|" + DateTime.Now
+        };
+        mqttClient.PublishMessage(message, "status");
     }
 }
